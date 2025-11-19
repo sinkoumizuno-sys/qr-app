@@ -129,7 +129,7 @@ function saveData() {
   .then(res => res.json())
   .then(data => {
     if (data.status === "success") {
-      alert("スプレッドシートに保存しました！");
+      alert("スプレッドシートに保存しました");
     } else {
       alert("保存に失敗しました");
     }
@@ -142,4 +142,5 @@ function saveData() {
 </script>
 </body>
 </html>
+
 
