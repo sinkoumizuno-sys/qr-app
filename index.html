@@ -69,10 +69,10 @@
   <div id="pid" class="value">---</div>
 
   <div class="label">品番</div>
-  <div id="pname" class="value">---</div>
+  <div id="pcode" class="value">---</div>
 
  <div class="label">個数</div>
-  <div id="pname" class="value">---</div>
+  <div id="pqty" class="value">---</div>
 
   <div class="label">納期</div>
   <div id="pdate" class="value">---</div>
@@ -126,11 +126,12 @@ async function loadProductData(productId) {
     return;
   }
 
-  document.getElementById("pname").textContent = row[header.indexOf("品番")];
+  document.getElementById("pcode").textContent = row[header.indexOf("品番")];
   document.getElementById("pname").textContent = row[header.indexOf("品名")];
-  document.getElementById("pdate").textContent = row[header.indexOf("個数")];
-  document.getElementById("pspec").textContent = row[header.indexOf("納期")];
+  document.getElementById("pqty").textContent = row[header.indexOf("個数")];
+  document.getElementById("pdate").textContent = row[header.indexOf("納期")];
 }
 </script>
 </body>
+
 </html>
