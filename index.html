@@ -4,134 +4,104 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>QR読み取り 現場アプリ</title>
-
-<!-- html5-qrcode CDN -->
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-
 <style>
-  body {
-    font-family: sans-serif;
-    padding: 20px;
-    background: #f7f7f7;
-  }
-  h1 {
-    text-align: center;
-    font-size: 26px;
-    margin-bottom: 20px;
-  }
-
-  #scan-btn {
-    width: 100%;
-    padding: 20px;
-    background: #0078d7;
-    color: white;
-    font-size: 22px;
-    border: none;
-    border-radius: 12px;
-  }
-
-  #reader {
-    width: 100%;
-    margin-top: 20px;
-  }
-
-  #product-card {
-    margin-top: 25px;
-    padding: 20px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    display: none;
-  }
-
-  .label {
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 10px;
-  }
-
-  .value {
-    font-size: 24px;
-    margin-top: 5px;
-  }
+  body { font-family: sans-serif; padding: 20px; background: #f7f7f7; }
+  h1 { text-align: center; margin-bottom: 20px; }
+  #scan-btn { width: 100%; padding: 20px; background: #0078d7; color: white; font-size: 22px; border: none; border-radius: 12px; }
+  #reader { width: 100%; margin-top: 20px; }
+  #product-card { margin-top: 25px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: none; }
+  .label { font-weight: bold; margin-top: 10px; }
+  .value { margin-top: 5px; }
+  input, textarea { width: 100%; margin-top: 5px; padding: 5px; }
+  button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 18px; }
 </style>
 </head>
-
 <body>
+
 <h1>製品QRスキャン</h1>
-
 <button id="scan-btn">QRコードを読み取る</button>
-
 <div id="reader"></div>
 
 <div id="product-card">
-  <div class="label">伝票番号</div>
-  <div id="pid" class="value">---</div>
-
-  <div class="label">品番</div>
-  <div id="pcode" class="value">---</div>
-
- <div class="label">個数</div>
-  <div id="pqty" class="value">---</div>
-
-  <div class="label">納期</div>
-  <div id="pdate" class="value">---</div>
-
+  <div class="label">伝票番号</div><div id="pid" class="value">---</div>
+  <div class="label">品番</div><div id="pcode" class="value">---</div>
+  <div class="label">品名</div><div id="pname" class="value">---</div>
+  <div class="label">個数</div><div id="pqty" class="value">---</div>
+  <div class="label">納期</div><div id="pdate" class="value">---</div>
+  <div class="label">素材</div><div id="pmaterial" class="value">---</div>
+  <div class="label">手順書</div><textarea id="pmanual"></textarea>
+  <div class="label">クレーム履歴</div><div id="pclaim" class="value">---</div>
+  <div class="label">備考</div><textarea id="pnote"></textarea>
+  <button class="save-btn" onclick="saveData()">保存</button>
 </div>
 
 <script>
-const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTGNf6CoDiK3lmS7FLiE6z6PVj4nhoftj7uWlctOmaIOR6KyTP4YdXVm-0z7EqvAaAWWMvLB-xtHwr/pub?output=csv"; 
-// ↑ あとであなたのスプレッドシートURLに差し替える
-
+const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTGNf6CoDiK3lmS7FLiE6z6PVj4nhoftj7uWlctOmaIOR6KyTP4YdXVm-0z7EqvAaAWWMvLB-xtHwr/pub?output=csv";
 let scanning = false;
+let currentRowIndex = -1;  // 現在表示中の行番号
 
 document.getElementById("scan-btn").onclick = () => {
   if (scanning) return;
-
   scanning = true;
-
   const html5QrCode = new Html5Qrcode("reader");
-
   html5QrCode.start(
-    { facingMode: "environment" }, // 背面カメラ
+    { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
     qrMessage => {
       html5QrCode.stop();
       scanning = false;
       loadProductData(qrMessage);
-    },
-    errorMessage => {
-      // 読み取り失敗時は無視
     }
   );
 };
 
+let allData = [];
 async function loadProductData(productId) {
   document.getElementById("product-card").style.display = "block";
   document.getElementById("pid").textContent = productId;
 
   const res = await fetch(sheetUrl);
   const text = await res.text();
-  const lines = text.split("\n").map(l => l.split(","));
+  const lines = text.trim().split("\n").map(l => l.split(","));
 
+  allData = lines;
   const header = lines[0];
   const idIndex = header.indexOf("ProductID");
+  const rowIndex = lines.findIndex(r => r[idIndex] === productId);
+  currentRowIndex = rowIndex;
 
-  const row = lines.find(r => r[idIndex] === productId);
-
-  if (!row) {
-    document.getElementById("pname").textContent = "データなし";
+  if (rowIndex === -1) {
+    document.getElementById("pcode").textContent = "データなし";
+    document.getElementById("pname").textContent = "-";
+    document.getElementById("pqty").textContent = "-";
     document.getElementById("pdate").textContent = "-";
-    document.getElementById("pspec").textContent = "-";
+    document.getElementById("pmaterial").textContent = "-";
+    document.getElementById("pmanual").value = "";
+    document.getElementById("pclaim").textContent = "-";
+    document.getElementById("pnote").value = "";
     return;
   }
 
+  const row = lines[rowIndex];
   document.getElementById("pcode").textContent = row[header.indexOf("品番")];
   document.getElementById("pname").textContent = row[header.indexOf("品名")];
   document.getElementById("pqty").textContent = row[header.indexOf("個数")];
   document.getElementById("pdate").textContent = row[header.indexOf("納期")];
+  document.getElementById("pmaterial").textContent = row[header.indexOf("素材")];
+  document.getElementById("pmanual").value = row[header.indexOf("手順書")];
+  document.getElementById("pclaim").textContent = row[header.indexOf("クレーム履歴")];
+  document.getElementById("pnote").value = row[header.indexOf("備考")];
+}
+
+// 保存ボタン（現状はブラウザ内で更新のみ）
+function saveData() {
+  if (currentRowIndex === -1) return;
+  const header = allData[0];
+  allData[currentRowIndex][header.indexOf("手順書")] = document.getElementById("pmanual").value;
+  allData[currentRowIndex][header.indexOf("備考")] = document.getElementById("pnote").value;
+  alert("ブラウザ上では保存されましたが、スプレッドシートにはまだ反映されません。\n書き込みを有効にするにはGoogle Apps ScriptのAPIが必要です。");
 }
 </script>
 </body>
-
 </html>
