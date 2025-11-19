@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QR読み取り 現場アプリ</title>
+
+<!-- html5-qrcode CDN -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<style>
+  body {
+    font-family: sans-serif;
+    padding: 20px;
+    background: #f7f7f7;
+  }
+  h1 {
+    text-align: center;
+    font-size: 26px;
+    margin-bottom: 20px;
+  }
+
+  #scan-btn {
+    width: 100%;
+    padding: 20px;
+    background: #0078d7;
+    color: white;
+    font-size: 22px;
+    border: none;
+    border-radius: 12px;
+  }
+
+  #reader {
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  #product-card {
+    margin-top: 25px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    display: none;
+  }
+
+  .label {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+
+  .value {
+    font-size: 24px;
+    margin-top: 5px;
+  }
+</style>
+</head>
+
+<body>
+<h1>製品QRスキャン</h1>
+
+<button id="scan-btn">QRコードを読み取る</button>
+
+<div id="reader"></div>
+
+<div id="product-card">
+  <div class="label">製品ID</div>
+  <div id="pid" class="value">---</div>
+
+  <div class="label">製品名</div>
+  <div id="pname" class="value">---</div>
+
+  <div class="label">納期</div>
+  <div id="pdate" class="value">---</div>
+
+  <div class="label">規格</div>
+  <div id="pspec" class="value">---</div>
+</div>
+
+<script>
+const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTGNf6CoDiK3lmS7FLiE6z6PVj4nhoftj7uWlctOmaIOR6KyTP4YdXVm-0z7EqvAaAWWMvLB-xtHwr/pub?output=csv"; 
+// ↑ あとであなたのスプレッドシートURLに差し替える
+
+let scanning = false;
+
+document.getElementById("scan-btn").onclick = () => {
+  if (scanning) return;
+
+  scanning = true;
+
+  const html5QrCode = new Html5Qrcode("reader");
+
+  html5QrCode.start(
+    { facingMode: "environment" }, // 背面カメラ
+    { fps: 10, qrbox: 250 },
+    qrMessage => {
+      html5QrCode.stop();
+      scanning = false;
+      loadProductData(qrMessage);
+    },
+    errorMessage => {
+      // 読み取り失敗時は無視
+    }
+  );
+};
+
+async function loadProductData(productId) {
+  document.getElementById("product-card").style.display = "block";
+  document.getElementById("pid").textContent = productId;
+
+  const res = await fetch(sheetUrl);
+  const text = await res.text();
+  const lines = text.split("\n").map(l => l.split(","));
+
+  const header = lines[0];
+  const idIndex = header.indexOf("ProductID");
+
+  const row = lines.find(r => r[idIndex] === productId);
+
+  if (!row) {
+    document.getElementById("pname").textContent = "データなし";
+    document.getElementById("pdate").textContent = "-";
+    document.getElementById("pspec").textContent = "-";
+    return;
+  }
+
+  document.getElementById("pname").textContent = row[header.indexOf("Name")];
+  document.getElementById("pdate").textContent = row[header.indexOf("納期")];
+  document.getElementById("pspec").textContent = row[header.indexOf("規格")];
+}
+</script>
+</body>
+</html>
