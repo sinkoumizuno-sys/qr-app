@@ -89,31 +89,13 @@ async function loadProductData(productId) {
   document.getElementById("pcode").textContent = row[header.indexOf("品番")];
   document.getElementById("pname").textContent = row[header.indexOf("品名")];
   document.getElementById("pqty").textContent = row[header.indexOf("個数")];
-
-  // 納期を日本時間で日付形式に整形
-  const rawDate = row[header.indexOf("納期")];
-  let formattedDate = "-";
-  if (rawDate) {
-    const dateObj = new Date(rawDate);
-    if (!isNaN(dateObj)) {
-      const yyyy = dateObj.getFullYear();
-      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const dd = String(dateObj.getDate()).padStart(2, "0");
-      formattedDate = `${yyyy}/${mm}/${dd}`;
-    }
-  }
-  document.getElementById("pdate").textContent = formattedDate;
-
+  document.getElementById("pdate").textContent = row[header.indexOf("納期")];
   document.getElementById("pmaterial").textContent = row[header.indexOf("素材")];
   document.getElementById("pmanual").value = row[header.indexOf("手順書")];
   document.getElementById("pclaim").textContent = row[header.indexOf("クレーム履歴")];
   document.getElementById("pnote").value = row[header.indexOf("備考")];
 }
 
-   // 自動スクロール
-  document.getElementById("product-card").scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-  
 // データ保存
 function saveData() {
   if (currentRowIndex === -1) return;
