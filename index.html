@@ -3,18 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>QR読み取り 現場アプリ</title>
+<title>QR読み取りアプリ</title>
+
+<!-- QRコードライブラリ -->
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
 <style>
-  body { font-family: sans-serif; padding: 20px; background: #f7f7f7; }
-  h1 { text-align: center; margin-bottom: 20px; }
-  #scan-btn { width: 100%; padding: 20px; background: #0078d7; color: white; font-size: 22px; border: none; border-radius: 12px; }
-  #reader { width: 100%; margin-top: 20px; }
-  #product-card { margin-top: 25px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: none; }
-  .label { font-weight: bold; margin-top: 10px; }
-  .value { margin-top: 5px; }
-  input, textarea { width: 100%; margin-top: 5px; padding: 5px; }
-  button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 18px; }
+body { font-family: sans-serif; padding: 20px; background: #f7f7f7; }
+h1 { text-align: center; margin-bottom: 20px; }
+#scan-btn { width: 100%; padding: 20px; background: #0078d7; color: white; font-size: 22px; border: none; border-radius: 12px; }
+#reader { width: 100%; margin-top: 20px; }
+#product-card { margin-top: 25px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: none; }
+.label { font-weight: bold; margin-top: 10px; }
+.value { margin-top: 5px; }
+input, textarea { width: 100%; margin-top: 5px; padding: 5px; }
+button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 18px; }
 </style>
 </head>
 <body>
@@ -37,9 +40,10 @@
 </div>
 
 <script>
-const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQTGNf6CoDiK3lmS7FLiE6z6PVj4nhoftj7uWlctOmaIOR6KyTP4YdXVm-0z7EqvAaAWWMvLB-xtHwr/pub?output=csv";
+const sheetApiUrl = "https://script.google.com/macros/s/AKfycbwxn2XuzmK9faZJMB5siZpd7BC05hntmjxBFKMs0ANuRVKjdOTqh-Z7pzLmClw1grLZ/exec"; // ← Apps ScriptのURLに差し替えてください
 let scanning = false;
-let currentRowIndex = -1;  // 現在表示中の行番号
+let currentRowIndex = -1;
+let allData = [];
 
 document.getElementById("scan-btn").onclick = () => {
   if (scanning) return;
@@ -56,20 +60,18 @@ document.getElementById("scan-btn").onclick = () => {
   );
 };
 
-let allData = [];
+// データ取得
 async function loadProductData(productId) {
+  const res = await fetch(sheetApiUrl);
+  const data = await res.json(); // JSON配列
+  allData = data;
+  const header = data[0];
+  const idIndex = header.indexOf("ProductID");
+  const rowIndex = data.findIndex(r => r[idIndex] === productId);
+  currentRowIndex = rowIndex;
+
   document.getElementById("product-card").style.display = "block";
   document.getElementById("pid").textContent = productId;
-
-  const res = await fetch(sheetUrl);
-  const text = await res.text();
-  const lines = text.trim().split("\n").map(l => l.split(","));
-
-  allData = lines;
-  const header = lines[0];
-  const idIndex = header.indexOf("ProductID");
-  const rowIndex = lines.findIndex(r => r[idIndex] === productId);
-  currentRowIndex = rowIndex;
 
   if (rowIndex === -1) {
     document.getElementById("pcode").textContent = "データなし";
@@ -83,7 +85,7 @@ async function loadProductData(productId) {
     return;
   }
 
-  const row = lines[rowIndex];
+  const row = data[rowIndex];
   document.getElementById("pcode").textContent = row[header.indexOf("品番")];
   document.getElementById("pname").textContent = row[header.indexOf("品名")];
   document.getElementById("pqty").textContent = row[header.indexOf("個数")];
@@ -94,13 +96,34 @@ async function loadProductData(productId) {
   document.getElementById("pnote").value = row[header.indexOf("備考")];
 }
 
-// 保存ボタン（現状はブラウザ内で更新のみ）
+// データ保存
 function saveData() {
   if (currentRowIndex === -1) return;
-  const header = allData[0];
-  allData[currentRowIndex][header.indexOf("手順書")] = document.getElementById("pmanual").value;
-  allData[currentRowIndex][header.indexOf("備考")] = document.getElementById("pnote").value;
-  alert("ブラウザ上では保存されましたが、スプレッドシートにはまだ反映されません。\n書き込みを有効にするにはGoogle Apps ScriptのAPIが必要です。");
+
+  const productId = document.getElementById("pid").textContent;
+  const manual = document.getElementById("pmanual").value;
+  const note = document.getElementById("pnote").value;
+
+  fetch(sheetApiUrl, {
+    method: "POST",
+    body: JSON.stringify({
+      ProductID: productId,
+      手順書: manual,
+      備考: note
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === "success") {
+      alert("スプレッドシートに保存しました！");
+    } else {
+      alert("保存に失敗しました");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("通信エラーです");
+  });
 }
 </script>
 </body>
