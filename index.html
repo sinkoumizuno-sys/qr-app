@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>QR読み取りアプリ</title>
+<title>QR読み取り 現場アプリ</title>
 
 <!-- QRコードライブラリ -->
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -13,11 +13,26 @@ body { font-family: sans-serif; padding: 20px; background: #f7f7f7; }
 h1 { text-align: center; margin-bottom: 20px; }
 #scan-btn { width: 100%; padding: 20px; background: #0078d7; color: white; font-size: 22px; border: none; border-radius: 12px; }
 #reader { width: 100%; margin-top: 20px; }
+
 #product-card { margin-top: 25px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: none; }
+
 .label { font-weight: bold; margin-top: 10px; }
 .value { margin-top: 5px; }
 input, textarea { width: 100%; margin-top: 5px; padding: 5px; }
 button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 18px; }
+
+/* カレンダー風納期表示 */
+.calendar-date {
+  display: inline-block;
+  padding: 10px;
+  text-align: center;
+  border: 2px solid #0078d7;
+  border-radius: 8px;
+  background: #e0f0ff;
+  font-weight: bold;
+  font-size: 18px;
+}
+.calendar-date span { display: block; }
 </style>
 </head>
 <body>
@@ -31,7 +46,7 @@ button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a
   <div class="label">品番</div><div id="pcode" class="value">---</div>
   <div class="label">品名</div><div id="pname" class="value">---</div>
   <div class="label">個数</div><div id="pqty" class="value">---</div>
-  <div class="label">納期</div><div id="pdate" class="value">---</div>
+  <div class="label">納期</div><div id="pdate" class="calendar-date">-</div>
   <div class="label">素材</div><div id="pmaterial" class="value">---</div>
   <div class="label">手順書</div><textarea id="pmanual"></textarea>
   <div class="label">クレーム履歴</div><div id="pclaim" class="value">---</div>
@@ -71,9 +86,9 @@ async function loadProductData(productId) {
   currentRowIndex = rowIndex;
 
   document.getElementById("product-card").style.display = "block";
-  document.getElementById("pid").textContent = productId;
 
   if (rowIndex === -1) {
+    document.getElementById("pid").textContent = productId;
     document.getElementById("pcode").textContent = "データなし";
     document.getElementById("pname").textContent = "-";
     document.getElementById("pqty").textContent = "-";
@@ -82,32 +97,37 @@ async function loadProductData(productId) {
     document.getElementById("pmanual").value = "";
     document.getElementById("pclaim").textContent = "-";
     document.getElementById("pnote").value = "";
-    return;
-  }
+  } else {
+    const row = data[rowIndex];
+    document.getElementById("pid").textContent = productId;
+    document.getElementById("pcode").textContent = row[header.indexOf("品番")];
+    document.getElementById("pname").textContent = row[header.indexOf("品名")];
+    document.getElementById("pqty").textContent = row[header.indexOf("個数")];
 
-  const row = data[rowIndex];
-  document.getElementById("pcode").textContent = row[header.indexOf("品番")];
-  document.getElementById("pname").textContent = row[header.indexOf("品名")];
-  document.getElementById("pqty").textContent = row[header.indexOf("個数")];
-
-  
-  const rawDate = row[header.indexOf("納期")];
-  let formattedDate = "-";
-  if (rawDate) {
-    const dateObj = new Date(rawDate);
-    if (!isNaN(dateObj)) {
-      const yyyy = dateObj.getFullYear();
-      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const dd = String(dateObj.getDate()).padStart(2, "0");
-      formattedDate = `${yyyy}/${mm}/${dd}`;
+    // カレンダー風納期
+    const rawDate = row[header.indexOf("納期")];
+    if (rawDate) {
+      const dateObj = new Date(rawDate);
+      if (!isNaN(dateObj)) {
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const dd = String(dateObj.getDate()).padStart(2, "0");
+        document.getElementById("pdate").innerHTML = `<span>${yyyy}</span><span>${mm}</span><span>${dd}</span>`;
+      } else {
+        document.getElementById("pdate").textContent = "-";
+      }
+    } else {
+      document.getElementById("pdate").textContent = "-";
     }
+
+    document.getElementById("pmaterial").textContent = row[header.indexOf("素材")];
+    document.getElementById("pmanual").value = row[header.indexOf("手順書")];
+    document.getElementById("pclaim").textContent = row[header.indexOf("クレーム履歴")];
+    document.getElementById("pnote").value = row[header.indexOf("備考")];
   }
-  document.getElementById("pdate").textContent = formattedDate;
-  
-  document.getElementById("pmaterial").textContent = row[header.indexOf("素材")];
-  document.getElementById("pmanual").value = row[header.indexOf("手順書")];
-  document.getElementById("pclaim").textContent = row[header.indexOf("クレーム履歴")];
-  document.getElementById("pnote").value = row[header.indexOf("備考")];
+
+  // 自動スクロール
+  document.getElementById("product-card").scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // データ保存
@@ -142,4 +162,3 @@ function saveData() {
 </script>
 </body>
 </html>
-
