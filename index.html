@@ -40,31 +40,64 @@ button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a
 </div>
 
 <script>
-const sheetApiUrl = "https://script.google.com/macros/s/AKfycbwxn2XuzmK9faZJMB5siZpd7BC05hntmjxBFKMs0ANuRVKjdOTqh-Z7pzLmClw1grLZ/exec"; // ← Apps ScriptのURLに差し替えてください
+// 
+const sheetApiUrl = "https://script.google.com/macros/s/AKfycbwxn2XuzmK9faZJMB5siZpd7BC05hntmjxBFKMs0ANuRVKjdOTqh-Z7pzLmClw1grLZ/exec";
+
 let scanning = false;
 let currentRowIndex = -1;
 let allData = [];
+let html5QrCode = null;
 
-document.getElementById("scan-btn").onclick = () => {
+// ======================
+// QRスキャン開始
+// ======================
+document.getElementById("scan-btn").onclick = async () => {
   if (scanning) return;
   scanning = true;
-  const html5QrCode = new Html5Qrcode("reader");
-  html5QrCode.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
-    qrMessage => {
-      html5QrCode.stop();
-      scanning = false;
-      loadProductData(qrMessage);
-    }
-  );
+
+  // 前回のインスタンスを完全に破棄
+  if (html5QrCode) {
+    try { await html5QrCode.stop(); } catch {}
+    try { await html5QrCode.clear(); } catch {}
+  }
+
+  html5QrCode = new Html5Qrcode("reader");
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 250, height: 250 },
+    // ★ iPhone / Android で安定化する設定
+    aspectRatio: 1.0
+  };
+
+  try {
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      config,
+      async (qrMessage) => {
+        // 読み取ったら停止
+        try { await html5QrCode.stop(); } catch {}
+        try { await html5QrCode.clear(); } catch {}
+        scanning = false;
+
+        loadProductData(qrMessage);
+      }
+    );
+  } catch (err) {
+    alert("カメラの起動に失敗しました。設定でカメラ権限を許可してください。");
+    console.error(err);
+    scanning = false;
+  }
 };
 
+// ======================
 // データ取得
+// ======================
 async function loadProductData(productId) {
   const res = await fetch(sheetApiUrl);
-  const data = await res.json(); // JSON配列
+  const data = await res.json();
   allData = data;
+
   const header = data[0];
   const idIndex = header.indexOf("ProductID");
   const rowIndex = data.findIndex(r => r[idIndex] === productId);
@@ -89,8 +122,8 @@ async function loadProductData(productId) {
   document.getElementById("pcode").textContent = row[header.indexOf("品番")];
   document.getElementById("pname").textContent = row[header.indexOf("品名")];
   document.getElementById("pqty").textContent = row[header.indexOf("個数")];
-  
-  // 納期を日本時間で日付形式に整形
+
+  // 日付整形
   const rawDate = row[header.indexOf("納期")];
   let formattedDate = "-";
   if (rawDate) {
@@ -106,11 +139,13 @@ async function loadProductData(productId) {
 
   document.getElementById("pmaterial").textContent = row[header.indexOf("素材")];
   document.getElementById("pmanual").value = row[header.indexOf("手順書")];
-  document.getElementById("pclaim").textContent = row[header.indexOf("クレーム履歴")];
+  document.getElementId("pclaim").textContent = row[header.indexOf("クレーム履歴")];
   document.getElementById("pnote").value = row[header.indexOf("備考")];
 }
 
+// ======================
 // データ保存
+// ======================
 function saveData() {
   if (currentRowIndex === -1) return;
 
@@ -142,5 +177,3 @@ function saveData() {
 </script>
 </body>
 </html>
-
-
