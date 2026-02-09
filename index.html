@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>QR読み取り 現場アプリ</title>
 
-<!-- QRコードライブラリ -->
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 <style>
@@ -40,13 +40,24 @@ button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a
 </div>
 
 <script>
-// 
 const sheetApiUrl = "https://script.google.com/macros/s/AKfycbwxn2XuzmK9faZJMB5siZpd7BC05hntmjxBFKMs0ANuRVKjdOTqh-Z7pzLmClw1grLZ/exec";
 
 let scanning = false;
 let currentRowIndex = -1;
 let allData = [];
+let header = [];
 let html5QrCode = null;
+
+// ======================
+// 初回に一度だけ取得
+// ======================
+async function preloadData() {
+  const res = await fetch(sheetApiUrl);
+  const data = await res.json();
+  header = data[0];
+  allData = data;
+}
+preloadData();
 
 // ======================
 // QRスキャン開始
@@ -55,7 +66,6 @@ document.getElementById("scan-btn").onclick = async () => {
   if (scanning) return;
   scanning = true;
 
-  // 前回のインスタンスを完全に破棄
   if (html5QrCode) {
     try { await html5QrCode.stop(); } catch {}
     try { await html5QrCode.clear(); } catch {}
@@ -63,19 +73,13 @@ document.getElementById("scan-btn").onclick = async () => {
 
   html5QrCode = new Html5Qrcode("reader");
 
-  const config = {
-    fps: 10,
-    qrbox: { width: 250, height: 250 },
-    // ★ iPhone / Android で安定化する設定
-    aspectRatio: 1.0
-  };
+  const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
 
   try {
     await html5QrCode.start(
       { facingMode: "environment" },
       config,
       async (qrMessage) => {
-        // 読み取ったら停止
         try { await html5QrCode.stop(); } catch {}
         try { await html5QrCode.clear(); } catch {}
         scanning = false;
@@ -84,23 +88,18 @@ document.getElementById("scan-btn").onclick = async () => {
       }
     );
   } catch (err) {
-    alert("カメラの起動に失敗しました。設定でカメラ権限を許可してください。");
+    alert("カメラの起動に失敗しました。");
     console.error(err);
     scanning = false;
   }
 };
 
 // ======================
-// データ取得
+// データ表示（通信なし）
 // ======================
-async function loadProductData(productId) {
-  const res = await fetch(sheetApiUrl);
-  const data = await res.json();
-  allData = data;
-
-  const header = data[0];
+function loadProductData(productId) {
   const idIndex = header.indexOf("ProductID");
-  const rowIndex = data.findIndex(r => r[idIndex] === productId);
+  const rowIndex = allData.findIndex(r => r[idIndex] === productId);
   currentRowIndex = rowIndex;
 
   document.getElementById("product-card").style.display = "block";
@@ -118,33 +117,29 @@ async function loadProductData(productId) {
     return;
   }
 
-  const row = data[rowIndex];
+  const row = allData[rowIndex];
   document.getElementById("pcode").textContent = row[header.indexOf("品番")];
   document.getElementById("pname").textContent = row[header.indexOf("品名")];
   document.getElementById("pqty").textContent = row[header.indexOf("個数")];
 
-  // 日付整形
   const rawDate = row[header.indexOf("納期")];
   let formattedDate = "-";
   if (rawDate) {
     const dateObj = new Date(rawDate);
     if (!isNaN(dateObj)) {
-      const yyyy = dateObj.getFullYear();
-      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const dd = String(dateObj.getDate()).padStart(2, "0");
-      formattedDate = `${yyyy}/${mm}/${dd}`;
+      formattedDate = `${dateObj.getFullYear()}/${String(dateObj.getMonth()+1).padStart(2,"0")}/${String(dateObj.getDate()).padStart(2,"0")}`;
     }
   }
   document.getElementById("pdate").textContent = formattedDate;
 
   document.getElementById("pmaterial").textContent = row[header.indexOf("素材")];
   document.getElementById("pmanual").value = row[header.indexOf("手順書")];
-  document.getElementId("pclaim").textContent = row[header.indexOf("クレーム履歴")];
+  document.getElementById("pclaim").textContent = row[header.indexOf("クレーム履歴")];
   document.getElementById("pnote").value = row[header.indexOf("備考")];
 }
 
 // ======================
-// データ保存
+// 保存
 // ======================
 function saveData() {
   if (currentRowIndex === -1) return;
@@ -177,3 +172,4 @@ function saveData() {
 </script>
 </body>
 </html>
+
