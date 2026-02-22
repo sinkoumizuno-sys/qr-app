@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -15,7 +14,7 @@ h1 { text-align: center; margin-bottom: 20px; }
 #reader { width: 100%; margin-top: 20px; }
 #product-card { margin-top: 25px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: none; }
 .label { font-weight: bold; margin-top: 10px; }
-.value { margin-top: 5px; }
+.value { margin-top: 5px; white-space: pre-wrap; }
 input, textarea { width: 100%; margin-top: 5px; padding: 5px; }
 button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 18px; }
 </style>
@@ -33,9 +32,18 @@ button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a
   <div class="label">個数</div><div id="pqty" class="value">---</div>
   <div class="label">納期</div><div id="pdate" class="value">---</div>
   <div class="label">素材</div><div id="pmaterial" class="value">---</div>
-  <div class="label">手順書</div><textarea id="pmanual"></textarea>
+
+  <div class="label">手順書</div>
+  <textarea id="pmanual"></textarea>
+
   <div class="label">クレーム履歴</div><div id="pclaim" class="value">---</div>
-  <div class="label">備考</div><textarea id="pnote"></textarea>
+
+  <div class="label">作業メモ履歴</div>
+  <div id="plog" class="value">---</div>
+
+  <div class="label">新規メモ入力</div>
+  <textarea id="pnote"></textarea>
+
   <button class="save-btn" onclick="saveData()">保存</button>
 </div>
 
@@ -73,7 +81,7 @@ document.getElementById("scan-btn").onclick = async () => {
 
   html5QrCode = new Html5Qrcode("reader");
 
-  const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
+  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
   try {
     await html5QrCode.start(
@@ -83,8 +91,7 @@ document.getElementById("scan-btn").onclick = async () => {
         try { await html5QrCode.stop(); } catch {}
         try { await html5QrCode.clear(); } catch {}
         scanning = false;
-
-        loadProductData(qrMessage);
+        loadProductData(qrMessage.trim());
       }
     );
   } catch (err) {
@@ -95,11 +102,11 @@ document.getElementById("scan-btn").onclick = async () => {
 };
 
 // ======================
-// データ表示（通信なし）
+// 表示処理
 // ======================
 function loadProductData(productId) {
   const idIndex = header.indexOf("ProductID");
-  const rowIndex = allData.findIndex(r => r[idIndex] === productId);
+  const rowIndex = allData.findIndex(r => String(r[idIndex]) === String(productId));
   currentRowIndex = rowIndex;
 
   document.getElementById("product-card").style.display = "block";
@@ -113,6 +120,7 @@ function loadProductData(productId) {
     document.getElementById("pmaterial").textContent = "-";
     document.getElementById("pmanual").value = "";
     document.getElementById("pclaim").textContent = "-";
+    document.getElementById("plog").textContent = "-";
     document.getElementById("pnote").value = "";
     return;
   }
@@ -133,13 +141,14 @@ function loadProductData(productId) {
   document.getElementById("pdate").textContent = formattedDate;
 
   document.getElementById("pmaterial").textContent = row[header.indexOf("素材")];
-  document.getElementById("pmanual").value = row[header.indexOf("手順書")];
-  document.getElementById("pclaim").textContent = row[header.indexOf("クレーム履歴")];
-  document.getElementById("pnote").value = row[header.indexOf("備考")];
+  document.getElementById("pmanual").value = row[header.indexOf("手順書")] || "";
+  document.getElementById("pclaim").textContent = row[header.indexOf("クレーム履歴")] || "";
+  document.getElementById("plog").textContent = row[header.indexOf("作業メモ履歴")] || "";
+  document.getElementById("pnote").value = "";
 }
 
 // ======================
-// 保存
+// 保存（追記）
 // ======================
 function saveData() {
   if (currentRowIndex === -1) {
@@ -151,20 +160,26 @@ function saveData() {
   const manual = document.getElementById("pmanual").value;
   const note = document.getElementById("pnote").value;
 
+  if (!note) {
+    alert("新規メモを入力してください");
+    return;
+  }
+
   fetch(sheetApiUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ProductID: productId,
-      手順書: manual,     // ← 手順書は上書き
-      追記メモ: note      // ← 作業メモ履歴に追記用
+      手順書: manual,
+      追記メモ: note
     })
   })
   .then(res => res.json())
   .then(data => {
     if (data.status === "success") {
       alert("保存しました（履歴に追記）");
-      document.getElementById("pnote").value = ""; // 入力欄クリア
+      document.getElementById("pnote").value = "";
+      preloadData(); // 再取得
     } else {
       alert("保存失敗");
     }
