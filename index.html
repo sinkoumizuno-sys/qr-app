@@ -150,11 +150,11 @@ function saveData() {
 
   fetch(sheetApiUrl, {
     method: "POST",
-    body: JSON.stringify({
-      ProductID: productId,
-      手順書: manual,
-      備考: note
-    })
+   body: JSON.stringify({
+  ProductID: productId,
+  手順書: manual,
+  追記メモ: note
+})
   })
   .then(res => res.json())
   .then(data => {
@@ -172,4 +172,5 @@ function saveData() {
 </script>
 </body>
 </html>
+
 
