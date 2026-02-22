@@ -142,7 +142,10 @@ function loadProductData(productId) {
 // 保存
 // ======================
 function saveData() {
-  if (currentRowIndex === -1) return;
+  if (currentRowIndex === -1) {
+    alert("保存対象がありません");
+    return;
+  }
 
   const productId = document.getElementById("pid").textContent;
   const manual = document.getElementById("pmanual").value;
@@ -150,27 +153,30 @@ function saveData() {
 
   fetch(sheetApiUrl, {
     method: "POST",
-   body: JSON.stringify({
-  ProductID: productId,
-  手順書: manual,
-  追記メモ: note
-})
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ProductID: productId,
+      手順書: manual,     // ← 手順書は上書き
+      追記メモ: note      // ← 作業メモ履歴に追記用
+    })
   })
   .then(res => res.json())
   .then(data => {
     if (data.status === "success") {
-      alert("スプレッドシートに保存しました");
+      alert("保存しました（履歴に追記）");
+      document.getElementById("pnote").value = ""; // 入力欄クリア
     } else {
-      alert("保存に失敗しました");
+      alert("保存失敗");
     }
   })
   .catch(err => {
     console.error(err);
-    alert("通信エラーです");
+    alert("通信エラー");
   });
 }
 </script>
 </body>
 </html>
+
 
 
