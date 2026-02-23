@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -34,8 +33,8 @@ button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a
   <div class="label">納期</div><div id="pdate" class="value">---</div>
   <div class="label">素材</div><div id="pmaterial" class="value">---</div>
 
-  <div class="label">手順書</div>
-  <textarea id="pmanual" readonly></textarea>
+  <div class="label">手順書（編集可）</div>
+  <textarea id="pmanual"></textarea>
 
   <div class="label">クレーム履歴</div>
   <div id="pclaim" class="value">---</div>
@@ -57,7 +56,7 @@ let allData = [];
 let header = [];
 let html5QrCode = null;
 
-  function sendLog(productId, action){
+function sendLog(productId, action){
   fetch(sheetApiUrl,{
     method:"POST",
     body: JSON.stringify({
@@ -69,7 +68,6 @@ let html5QrCode = null;
   });
 }
 
-  
 // ======================
 // 初回ロード
 // ======================
@@ -156,14 +154,15 @@ function loadProductData(productId) {
 }
 
 // ======================
-// 保存（追記）
+// 保存（手順書＋メモ）
 // ======================
 function saveData() {
   const productId = document.getElementById("pid").textContent;
+  const manual = document.getElementById("pmanual").value;
   const note = document.getElementById("pnote").value;
 
-  if (!note) {
-    alert("新規メモを入力してください");
+  if (!note && !manual) {
+    alert("変更内容がありません");
     return;
   }
 
@@ -171,6 +170,7 @@ function saveData() {
     method: "POST",
     body: JSON.stringify({
       ProductID: productId,
+      手順書: manual,
       memo: note
     })
   })
@@ -179,7 +179,7 @@ function saveData() {
     if (data.status === "success") {
       alert("保存しました");
       document.getElementById("pnote").value = "";
-      preloadData(); // 再取得
+      preloadData();
       sendLog(productId, "save");
     } else {
       alert("保存失敗");
@@ -194,7 +194,6 @@ function saveData() {
 
 </body>
 </html>
-
 
 
 
