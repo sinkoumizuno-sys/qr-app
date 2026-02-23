@@ -50,13 +50,26 @@ button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a
 </div>
 
 <script>
-const sheetApiUrl = "https://script.google.com/macros/s/AKfycbycq25J-ABO_qLz6RT5ViqrTQY4XjRKZqw-iRNP8OpzZOGGSmKIar6PgUsa2So6_AA9/exec";
+const sheetApiUrl = "https://script.google.com/macros/s/AKfycbxMWGOi8hc-FUVHUvy5uzphMl5SSG7sSJl75JgRVKmTVHdEOWvwOam1BB5z0ryxGyoQ/exec";
 
 let scanning = false;
 let allData = [];
 let header = [];
 let html5QrCode = null;
 
+  function sendLog(productId, action){
+  fetch(sheetApiUrl,{
+    method:"POST",
+    body: JSON.stringify({
+      log: true,
+      ProductID: productId,
+      action: action,
+      device: navigator.userAgent
+    })
+  });
+}
+
+  
 // ======================
 // 初回ロード
 // ======================
@@ -94,6 +107,7 @@ document.getElementById("scan-btn").onclick = async () => {
         scanning = false;
 
         loadProductData(qrMessage.trim());
+        sendLog(qrMessage.trim(), "scan");
       }
     );
   } catch (err) {
@@ -166,6 +180,7 @@ function saveData() {
       alert("保存しました");
       document.getElementById("pnote").value = "";
       preloadData(); // 再取得
+      sendLog(productId, "save");
     } else {
       alert("保存失敗");
     }
@@ -179,6 +194,7 @@ function saveData() {
 
 </body>
 </html>
+
 
 
 
