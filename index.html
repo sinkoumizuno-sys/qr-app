@@ -9,20 +9,75 @@
 
 <style>
 body { font-family: sans-serif; padding: 20px; background: #f7f7f7; }
-h1 { text-align: center; margin-bottom: 20px; }
-#scan-btn { width: 100%; padding: 20px; background: #0078d7; color: white; font-size: 22px; border: none; border-radius: 12px; }
+h1 { text-align: center; margin-bottom: 10px; }
+
+#scan-btn {
+  width: 100%;
+  padding: 20px;
+  background: #0078d7;
+  color: white;
+  font-size: 22px;
+  border: none;
+  border-radius: 12px;
+}
+
+#update-info {
+  margin-top: 15px;
+  padding: 10px;
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 8px;
+  font-size: 14px;
+}
+#update-info h3 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+}
+
 #reader { width: 100%; margin-top: 20px; }
-#product-card { margin-top: 25px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: none; }
+
+#product-card {
+  margin-top: 25px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  display: none;
+}
+
 .label { font-weight: bold; margin-top: 10px; }
 .value { margin-top: 5px; white-space: pre-wrap; }
-textarea { width: 100%; margin-top: 5px; padding: 5px; }
-button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a745; color: white; border: none; border-radius: 8px; font-size: 18px; }
+
+textarea {
+  width: 100%;
+  margin-top: 5px;
+  padding: 5px;
+}
+
+button.save-btn {
+  margin-top: 10px;
+  padding: 10px;
+  width: 100%;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+}
 </style>
 </head>
 <body>
 
 <h1>製品QRスキャン</h1>
+
 <button id="scan-btn">QRコードを読み取る</button>
+
+<!-- 🔽 更新情報 -->
+<div id="update-info">
+  <h3>📢 アプリ更新情報</h3>
+  <ul id="update-list"></ul>
+</div>
+
 <div id="reader"></div>
 
 <div id="product-card">
@@ -49,13 +104,27 @@ button.save-btn { margin-top: 10px; padding: 10px; width: 100%; background: #28a
 </div>
 
 <script>
-const sheetApiUrl = "https://script.google.com/macros/s/AKfycbwKJeiTOTerE5zYtOff5alyFfduKAvDzCSl8aBh558SOgCXB_oEWmPv5KO8RufzE7j5/exec";
+const sheetApiUrl = "https://script.google.com/macros/s/AKfycbxMWGOi8hc-FUVHUvy5uzphMl5SSG7sSJl75JgRVKmTVHdEOWvwOam1BB5z0ryxGyoQ/exec";
 
 let scanning = false;
 let allData = [];
 let header = [];
 let html5QrCode = null;
 
+// ===== 更新情報 =====
+const updateHistory = [
+  "2026/02/23 更新情報表示機能を追加",
+  "2026/02/21 手順書編集・保存対応",
+];
+
+const updateList = document.getElementById("update-list");
+updateHistory.forEach(item => {
+  const li = document.createElement("li");
+  li.textContent = item;
+  updateList.appendChild(li);
+});
+
+// ===== アクセスログ送信 =====
 function sendLog(productId, action){
   fetch(sheetApiUrl,{
     method:"POST",
@@ -162,7 +231,7 @@ function saveData() {
   const note = document.getElementById("pnote").value;
 
   if (!note && !manual) {
-    alert("変更内容がありません");
+    alert("入力がありません");
     return;
   }
 
@@ -194,7 +263,6 @@ function saveData() {
 
 </body>
 </html>
-
 
 
 
