@@ -177,8 +177,11 @@ document.getElementById("scan-btn").onclick = async () => {
    await html5QrCode.clear();
    scanning=false;
 
-   loadProductData(qrMessage.trim());
-        sendLog(qrMessage.trim(), "scan");
+   const pid = qrMessage.trim();
+
+sendAccessLog(pid,"QRスキャン");
+
+loadProductData(pid);
       }
  );
 
@@ -285,10 +288,13 @@ function saveData(){
  .then(data=>{
 
  if (data.status === "success") {
+
+   sendAccessLog(productId,"データ保存");
       alert("保存しました");
+   
       document.getElementById("pnote").value = "";
       preloadData();
-      sendLog(productId, "save");
+      
     } else {
       alert("保存失敗");
     }
@@ -302,6 +308,7 @@ function saveData(){
 
 </body>
 </html>
+
 
 
 
