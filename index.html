@@ -164,8 +164,8 @@ document.getElementById("scan-btn").onclick = async () => {
    scanning=false;
 
    loadProductData(qrMessage.trim());
-
-  }
+        sendLog(qrMessage.trim(), "scan");
+      }
  );
 
 };
@@ -270,18 +270,25 @@ function saveData(){
  .then(res=>res.json())
  .then(data=>{
 
-  alert("保存しました");
-
-  preloadData();
-
- });
-
+ if (data.status === "success") {
+      alert("保存しました");
+      document.getElementById("pnote").value = "";
+      preloadData();
+      sendLog(productId, "save");
+    } else {
+      alert("保存失敗");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert("通信エラー");
+  });
 }
-
 </script>
 
 </body>
 </html>
+
 
 
 
