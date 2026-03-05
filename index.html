@@ -131,6 +131,20 @@ let allData = [];
 let header = [];
 let html5QrCode = null;
 
+  function sendAccessLog(productId, action){
+
+ fetch(sheetApiUrl,{
+  method:"POST",
+  body:JSON.stringify({
+   log:true,
+   ProductID:productId,
+   action:action,
+   device:navigator.userAgent
+  })
+ });
+
+}
+
 /* 初期データ取得 */
 
 async function preloadData(){
@@ -288,6 +302,7 @@ function saveData(){
 
 </body>
 </html>
+
 
 
 
