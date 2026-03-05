@@ -1,3 +1,8 @@
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,269 +10,313 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>QR読み取り 現場アプリ</title>
 
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-body { font-family: sans-serif; padding: 20px; background: #f7f7f7; }
-h1 { text-align: center; margin-bottom: 10px; }
 
-#scan-btn {
-  width: 100%;
-  padding: 20px;
-  background: #0078d7;
-  color: white;
-  font-size: 22px;
-  border: none;
-  border-radius: 12px;
+body{
+font-family:sans-serif;
+padding:20px;
+background:#f7f7f7;
 }
 
-#update-info {
-  margin-top: 15px;
-  padding: 10px;
-  background: #fff3cd;
-  border: 1px solid #ffeeba;
-  border-radius: 8px;
-  font-size: 14px;
-}
-#update-info h3 {
-  margin: 0 0 5px 0;
-  font-size: 16px;
+#scan-btn{
+width:100%;
+padding:20px;
+font-size:22px;
+background:#0078d7;
+color:white;
+border:none;
+border-radius:12px;
 }
 
-#reader { width: 100%; margin-top: 20px; }
-
-#product-card {
-  margin-top: 25px;
-  padding: 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-  display: none;
+#reader{
+margin-top:20px;
 }
 
-.label { font-weight: bold; margin-top: 10px; }
-.value { margin-top: 5px; white-space: pre-wrap; }
-
-textarea {
-  width: 100%;
-  margin-top: 5px;
-  padding: 8px;
-  font-size: 16px;       /* 文字サイズ */
-  line-height: 1.6;     /* 行間 */
-  min-height: 120px;    /* 枠の高さ */
-  box-sizing: border-box;
+#product-card{
+margin-top:25px;
+padding:20px;
+background:white;
+border-radius:12px;
+box-shadow:0 4px 10px rgba(0,0,0,0.15);
+display:none;
 }
 
-button.save-btn {
-  margin-top: 10px;
-  padding: 10px;
-  width: 100%;
-  background: #28a745;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 18px;
+.label{
+font-weight:bold;
+margin-top:10px;
 }
+
+.value{
+margin-top:5px;
+}
+
+.deadline{
+
+font-size:42px;
+font-weight:bold;
+color:#d00000;
+background:#fff3f3;
+padding:15px;
+border-radius:10px;
+text-align:center;
+margin-bottom:10px;
+
+}
+
+.alert-box{
+
+display:none;
+margin-top:10px;
+padding:15px;
+background:#ff3b3b;
+color:white;
+font-size:22px;
+font-weight:bold;
+text-align:center;
+border-radius:10px;
+
+animation:blink 1s infinite;
+
+}
+
+@keyframes blink{
+
+0%{opacity:1;}
+50%{opacity:0.3;}
+100%{opacity:1;}
+
+}
+
+textarea{
+width:100%;
+margin-top:5px;
+padding:8px;
+font-size:16px;
+line-height:1.6;
+min-height:120px;
+box-sizing:border-box;
+}
+
+button.save-btn{
+
+margin-top:10px;
+padding:10px;
+width:100%;
+background:#28a745;
+color:white;
+border:none;
+border-radius:8px;
+font-size:18px;
+
+}
+
 </style>
 </head>
+
 <body>
 
 <h1>製品QRスキャン</h1>
 
 <button id="scan-btn">QRコードを読み取る</button>
 
-<!-- 🔽 更新情報 -->
-<div id="update-info">
-  <h3>📢 アプリ更新情報</h3>
-  <ul id="update-list"></ul>
-</div>
-
 <div id="reader"></div>
 
 <div id="product-card">
-  <div class="label">伝票番号</div><div id="pid" class="value">---</div>
-  <div class="label">品番</div><div id="pcode" class="value">---</div>
-  <div class="label">品名</div><div id="pname" class="value">---</div>
-  <div class="label">個数</div><div id="pqty" class="value">---</div>
-  <div class="label">納期</div><div id="pdate" class="value">---</div>
-  <div class="label">素材</div><div id="pmaterial" class="value">---</div>
 
-  <div class="label">手順書（編集可）</div>
-  <textarea id="pmanual"></textarea>
+<div class="label">伝票番号</div>
+<div id="pid" class="value"></div>
 
-  <div class="label">クレーム履歴</div>
-  <div id="pclaim" class="value">---</div>
+<div class="label">品番</div>
+<div id="pcode" class="value"></div>
 
-  <div class="label">作業メモ履歴</div>
-  <div id="plog" class="value">---</div>
+<div class="label">品名</div>
+<div id="pname" class="value"></div>
 
-  <div class="label">新規メモ入力</div>
-  <textarea id="pnote"></textarea>
+<div class="label">個数</div>
+<div id="pqty" class="value"></div>
 
-  <button class="save-btn" onclick="saveData()">保存</button>
+<div class="label">製造納期</div>
+<div id="pmdate" class="deadline">---</div>
+
+<div id="alert" class="alert-box">
+⚠ 製造納期まで3日以内です
+</div>
+
+<div class="label">納期</div>
+<div id="pdate" class="value"></div>
+
+<div class="label">素材</div>
+<div id="pmaterial" class="value"></div>
+
+<div class="label">手順書</div>
+<textarea id="pmanual"></textarea>
+
+<div class="label">クレーム履歴</div>
+<div id="pclaim" class="value"></div>
+
+<div class="label">作業メモ履歴</div>
+<div id="plog" class="value"></div>
+
+<div class="label">新規メモ</div>
+<textarea id="pnote"></textarea>
+
+<button class="save-btn" onclick="saveData()">保存</button>
+
 </div>
 
 <script>
-const sheetApiUrl = "https://script.google.com/macros/s/AKfycbxMWGOi8hc-FUVHUvy5uzphMl5SSG7sSJl75JgRVKmTVHdEOWvwOam1BB5z0ryxGyoQ/exec";
 
-let scanning = false;
-let allData = [];
-let header = [];
-let html5QrCode = null;
+const sheetApiUrl="https://script.google.com/macros/s/AKfycbxXdarpEh-3AY0qrF6FIlMvHu6kcagIq3KiTYWSWPN-7QusVX8M_2Sc31XzbRuNWpMP/exec";
 
-// ===== 更新情報 =====
-const updateHistory = [
-  "2026/02/23 更新情報表示機能を追加",
-  "2026/02/21 手順書編集・保存対応",
-];
+let header=[];
+let allData=[];
 
-const updateList = document.getElementById("update-list");
-updateHistory.forEach(item => {
-  const li = document.createElement("li");
-  li.textContent = item;
-  updateList.appendChild(li);
-});
+async function preloadData(){
 
-// ===== アクセスログ送信 =====
-function sendLog(productId, action){
-  fetch(sheetApiUrl,{
-    method:"POST",
-    body: JSON.stringify({
-      log: true,
-      ProductID: productId,
-      action: action,
-      device: navigator.userAgent
-    })
-  });
+const res=await fetch(sheetApiUrl);
+const data=await res.json();
+
+header=data[0];
+allData=data;
+
 }
 
-// ======================
-// 初回ロード
-// ======================
-async function preloadData() {
-  const res = await fetch(sheetApiUrl);
-  const data = await res.json();
-  header = data[0];
-  allData = data;
-}
 preloadData();
 
-// ======================
-// QRスキャン開始
-// ======================
-document.getElementById("scan-btn").onclick = async () => {
-  if (scanning) return;
-  scanning = true;
 
-  if (html5QrCode) {
-    try { await html5QrCode.stop(); } catch {}
-    try { await html5QrCode.clear(); } catch {}
-  }
+// QRスキャン
 
-  html5QrCode = new Html5Qrcode("reader");
+const html5QrCode=new Html5Qrcode("reader");
 
-  const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+document.getElementById("scan-btn").onclick=async()=>{
 
-  try {
-    await html5QrCode.start(
-      { facingMode: "environment" },
-      config,
-      async (qrMessage) => {
-        try { await html5QrCode.stop(); } catch {}
-        try { await html5QrCode.clear(); } catch {}
-        scanning = false;
+await html5QrCode.start(
+{facingMode:"environment"},
+{fps:10,qrbox:250},
+(qrMessage)=>{
 
-        loadProductData(qrMessage.trim());
-        sendLog(qrMessage.trim(), "scan");
-      }
-    );
-  } catch (err) {
-    alert("カメラの起動に失敗しました。");
-    console.error(err);
-    scanning = false;
-  }
+html5QrCode.stop();
+loadProductData(qrMessage.trim());
+
+}
+);
+
 };
 
-// ======================
-// 表示処理
-// ======================
-function loadProductData(productId) {
-  const idIndex = header.indexOf("ProductID");
-  const rowIndex = allData.findIndex(r => String(r[idIndex]) === String(productId));
 
-  document.getElementById("product-card").style.display = "block";
-  document.getElementById("pid").textContent = productId;
+// データ表示
 
-  if (rowIndex === -1) {
-    alert("該当データがありません");
-    return;
-  }
+function loadProductData(productId){
 
-  const row = allData[rowIndex];
+const idIndex=header.indexOf("ProductID");
 
-  document.getElementById("pcode").textContent = row[header.indexOf("品番")];
-  document.getElementById("pname").textContent = row[header.indexOf("品名")];
-  document.getElementById("pqty").textContent = row[header.indexOf("個数")];
+const rowIndex=
+allData.findIndex(r=>String(r[idIndex])===String(productId));
 
-  const rawDate = row[header.indexOf("納期")];
-  let formattedDate = "-";
-  if (rawDate) {
-    const dateObj = new Date(rawDate);
-    if (!isNaN(dateObj)) {
-      formattedDate = `${dateObj.getFullYear()}/${String(dateObj.getMonth()+1).padStart(2,"0")}/${String(dateObj.getDate()).padStart(2,"0")}`;
-    }
-  }
-  document.getElementById("pdate").textContent = formattedDate;
+if(rowIndex==-1){
 
-  document.getElementById("pmaterial").textContent = row[header.indexOf("素材")];
-  document.getElementById("pmanual").value = row[header.indexOf("手順書")] || "";
-  document.getElementById("pclaim").textContent = row[header.indexOf("クレーム履歴")] || "";
-  document.getElementById("plog").textContent = row[header.indexOf("作業メモ履歴")] || "";
-  document.getElementById("pnote").value = "";
+alert("該当データなし");
+return;
+
 }
 
-// ======================
-// 保存（手順書＋メモ）
-// ======================
-function saveData() {
-  const productId = document.getElementById("pid").textContent;
-  const manual = document.getElementById("pmanual").value;
-  const note = document.getElementById("pnote").value;
+const row=allData[rowIndex];
 
-  if (!note && !manual) {
-    alert("入力がありません");
-    return;
-  }
+document.getElementById("product-card").style.display="block";
 
-  fetch(sheetApiUrl, {
-    method: "POST",
-    body: JSON.stringify({
-      ProductID: productId,
-      手順書: manual,
-      memo: note
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.status === "success") {
-      alert("保存しました");
-      document.getElementById("pnote").value = "";
-      preloadData();
-      sendLog(productId, "save");
-    } else {
-      alert("保存失敗");
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    alert("通信エラー");
-  });
+document.getElementById("pid").textContent=productId;
+document.getElementById("pcode").textContent=row[header.indexOf("品番")];
+document.getElementById("pname").textContent=row[header.indexOf("品名")];
+document.getElementById("pqty").textContent=row[header.indexOf("個数")];
+document.getElementById("pmaterial").textContent=row[header.indexOf("素材")];
+
+document.getElementById("pmanual").value=row[header.indexOf("手順書")]||"";
+document.getElementById("pclaim").textContent=row[header.indexOf("クレーム履歴")]||"";
+document.getElementById("plog").textContent=row[header.indexOf("作業メモ履歴")]||"";
+
+
+// ===== 製造納期 =====
+
+const rawMDate=row[header.indexOf("製造納期")];
+
+let formattedMDate="-";
+
+if(rawMDate){
+
+const mDate=new Date(rawMDate);
+
+formattedMDate=
+`${mDate.getFullYear()}/${String(mDate.getMonth()+1).padStart(2,"0")}/${String(mDate.getDate()).padStart(2,"0")}`;
+
+document.getElementById("pmdate").textContent=formattedMDate;
+
+
+// ===== 3日前アラート =====
+
+const today=new Date();
+today.setHours(0,0,0,0);
+
+const diff=(mDate-today)/(1000*60*60*24);
+
+if(diff<=3){
+
+document.getElementById("alert").style.display="block";
+
+}else{
+
+document.getElementById("alert").style.display="none";
+
 }
+
+}
+
+
+// ===== 納期 =====
+
+const rawDate=row[header.indexOf("納期")];
+
+if(rawDate){
+
+const d=new Date(rawDate);
+
+const formatted=
+`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,"0")}/${String(d.getDate()).padStart(2,"0")}`;
+
+document.getElementById("pdate").textContent=formatted;
+
+}
+
+}
+
+
+// 保存
+
+function saveData(){
+
+const productId=document.getElementById("pid").textContent;
+const manual=document.getElementById("pmanual").value;
+const note=document.getElementById("pnote").value;
+
+fetch(sheetApiUrl,{
+method:"POST",
+body:JSON.stringify({
+ProductID:productId,
+手順書:manual,
+memo:note
+})
+})
+.then(r=>r.json())
+.then(()=>{
+
+alert("保存しました");
+
+});
+
+}
+
 </script>
 
 </body>
 </html>
-
-
-
-
